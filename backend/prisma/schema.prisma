@@ -1,0 +1,110 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model User {
+  id         String   @id @default(uuid())
+  email      String   @unique
+  password   String
+  name       String
+  role       String
+  region     String
+  status     String   @default("active")
+  created_at DateTime @default(now())
+
+  lands       Land[]
+  activities  Activity[]
+  news        News[]
+}
+
+model Land {
+  id                  String   @id @default(uuid())
+  owner_id            String
+  name                String
+  area_ha             Float
+  location            String
+  status              String   @default("active")
+  verification_status String   @default("pending")
+  created_at          DateTime @default(now())
+
+  owner      User       @relation(fields: [owner_id], references: [id])
+  activities Activity[]
+}
+
+model Equipment {
+  id                 String   @id @default(uuid())
+  name               String
+  category           String
+  quantity_total     Int
+  quantity_available Int
+  description        String
+  created_at         DateTime @default(now())
+}
+
+model RentalRequest {
+  id           String   @id @default(uuid())
+  requester_id String
+  equipment_id String
+  start_date   String
+  end_date     String
+  status       String   @default("pending")
+  notes        String
+  created_at   DateTime @default(now())
+}
+
+model Activity {
+  id          String   @id @default(uuid())
+  petani_id   String
+  land_id     String
+  date        String
+  type        String
+  description String
+  created_at  DateTime @default(now())
+
+  petani User @relation(fields: [petani_id], references: [id])
+  land   Land @relation(fields: [land_id], references: [id])
+}
+
+model News {
+  id           String   @id @default(uuid())
+  author_id    String
+  title        String
+  content      String
+  published_at DateTime @default(now())
+
+  author User @relation(fields: [author_id], references: [id])
+}
+
+model SystemLog {
+  id           String   @id @default(uuid())
+  user_id      String
+  user_name    String
+  user_email   String
+  action       String
+  entity       String
+  entity_id    String
+  ip_address   String
+  timestamp    DateTime @default(now())
+}
+
+model OrgStructure {
+  id        String  @id @default(uuid())
+  name      String
+  parent_id String?
+  leader_id String
+}
+
+model LandEdit {
+  id        String   @id @default(uuid())
+  land_id   String
+  editor_id String
+  changes   String
+  edited_at DateTime @default(now())
+}
