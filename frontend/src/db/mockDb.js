@@ -1,13 +1,13 @@
-const API_URL = 'http://localhost:5000/api';
+import { supabase } from './supabaseClient';
 
-// DB Access API Wrapper over Express Backend
+// DB Access API Wrapper over Supabase
 export const mockDb = {
   // Read All records from a table
   async getAll(table) {
     try {
-      const res = await fetch(`${API_URL}/${table}`);
-      if (!res.ok) throw new Error('Failed to fetch');
-      return await res.json();
+      const { data, error } = await supabase.from(table).select('*');
+      if (error) throw error;
+      return data;
     } catch (e) {
       console.error(e);
       return [];
@@ -17,9 +17,9 @@ export const mockDb = {
   // Get single record by ID
   async getById(table, id) {
     try {
-      const res = await fetch(`${API_URL}/${table}/${id}`);
-      if (!res.ok) return null;
-      return await res.json();
+      const { data, error } = await supabase.from(table).select('*').eq('id', id).single();
+      if (error) throw error;
+      return data;
     } catch (e) {
       console.error(e);
       return null;
@@ -29,16 +29,9 @@ export const mockDb = {
   // Insert a new record
   async insert(table, record, userId = 'system') {
     try {
-      const res = await fetch(`${API_URL}/${table}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-user-id': userId
-        },
-        body: JSON.stringify(record)
-      });
-      if (!res.ok) throw new Error('Failed to insert');
-      return await res.json();
+      const { data, error } = await supabase.from(table).insert([record]).select().single();
+      if (error) throw error;
+      return data;
     } catch (e) {
       console.error(e);
       return null;
@@ -48,16 +41,9 @@ export const mockDb = {
   // Update an existing record
   async update(table, id, updates, userId = 'system') {
     try {
-      const res = await fetch(`${API_URL}/${table}/${id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-user-id': userId
-        },
-        body: JSON.stringify(updates)
-      });
-      if (!res.ok) throw new Error('Failed to update');
-      return await res.json();
+      const { data, error } = await supabase.from(table).update(updates).eq('id', id).select().single();
+      if (error) throw error;
+      return data;
     } catch (e) {
       console.error(e);
       return null;
@@ -67,13 +53,8 @@ export const mockDb = {
   // Delete a record
   async delete(table, id, userId = 'system') {
     try {
-      const res = await fetch(`${API_URL}/${table}/${id}`, {
-        method: 'DELETE',
-        headers: {
-          'x-user-id': userId
-        }
-      });
-      if (!res.ok) throw new Error('Failed to delete');
+      const { error } = await supabase.from(table).delete().eq('id', id);
+      if (error) throw error;
       return true;
     } catch (e) {
       console.error(e);
@@ -83,32 +64,11 @@ export const mockDb = {
 
   // Export Backup
   async exportBackup() {
-    try {
-      const res = await fetch(`${API_URL}/system/export`);
-      const data = await res.json();
-      return JSON.stringify(data, null, 2);
-    } catch (e) {
-      console.error(e);
-      return '{}';
-    }
+    return JSON.stringify({ message: 'Gunakan fitur backup di Dashboard Supabase' }, null, 2);
   },
 
   // Import Backup
   async restoreBackup(backupJsonString, userId = 'system') {
-    try {
-      const data = JSON.parse(backupJsonString);
-      const res = await fetch(`${API_URL}/system/restore`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-user-id': userId
-        },
-        body: JSON.stringify(data)
-      });
-      const result = await res.json();
-      return result;
-    } catch (error) {
-      return { success: false, message: error.message };
-    }
+    return { success: false, message: 'Restore melalui aplikasi tidak didukung, gunakan Supabase SQL Editor' };
   }
 };

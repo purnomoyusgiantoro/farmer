@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { mockDb } from '../db/mockDb';
+import { supabase } from '../db/supabaseClient';
 
 const AuthContext = createContext(null);
 
@@ -15,7 +16,7 @@ export function AuthProvider({ children }) {
         try {
           const parsed = JSON.parse(savedUser);
           // Refresh user data from db in case status or profile changed
-          const dbUser = await mockDb.getById('users', parsed.id);
+          const { data: dbUser } = await supabase.from('users').select('*').eq('id', parsed.id).single();
           if (dbUser && dbUser.status === 'active') {
             setUser(dbUser);
           } else {
@@ -32,28 +33,31 @@ export function AuthProvider({ children }) {
 
   const login = async (email, password) => {
     try {
-      const res = await fetch('http://localhost:5000/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password })
-      });
-      const data = await res.json();
-      if (data.success) {
-        setUser(data.user);
-        localStorage.setItem('farmers_portal_session', JSON.stringify(data.user));
-        return { success: true };
-      } else {
-        return { success: false, message: data.message };
+      const { data: user, error } = await supabase.from('users').select('*').eq('email', email).single();
+      
+      if (error || !user) {
+        return { success: false, message: 'Email atau password salah.' };
       }
+
+      if (user.status !== 'active') {
+        return { success: false, message: 'Akun Anda diblokir atau belum aktif.' };
+      }
+
+      if (user.password !== password) {
+        return { success: false, message: 'Email atau password salah.' };
+      }
+
+      // Login success
+      const { password: _, ...userWithoutPassword } = user;
+      setUser(userWithoutPassword);
+      localStorage.setItem('farmers_portal_session', JSON.stringify(userWithoutPassword));
+      return { success: true };
     } catch (error) {
       return { success: false, message: 'Terjadi kesalahan pada server.' };
     }
   };
 
   const logout = async () => {
-    if (user) {
-      // In a real app we might call a logout endpoint here
-    }
     setUser(null);
     localStorage.removeItem('farmers_portal_session');
   };
