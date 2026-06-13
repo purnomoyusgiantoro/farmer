@@ -10,7 +10,7 @@ export default function Login() {
   const { login } = useAuth();
   const navigate = useNavigate();
 
-  const handleLoginSubmit = (e) => {
+  const handleLoginSubmit = async (e) => {
     e.preventDefault();
     setError('');
     
@@ -19,7 +19,7 @@ export default function Login() {
       return;
     }
 
-    const res = login(email, password);
+    const res = await login(email, password);
     if (res.success) {
       navigate('/');
     } else {
@@ -40,10 +40,12 @@ export default function Login() {
     setPassword('password123');
     
     // Auto login for better UX
-    setTimeout(() => {
-      const res = login(preset.email, 'password123');
+    setTimeout(async () => {
+      const res = await login(preset.email, 'password123');
       if (res.success) {
         navigate('/');
+      } else {
+        setError(res.message || 'Gagal login');
       }
     }, 100);
   };
